@@ -52,11 +52,21 @@ fn socket_test_udp() {
     let addr = net::SocketAddr::from_str("127.0.0.1:1666").unwrap();
 
     let server = Socket::new(family, ty, proto).unwrap();
+
+    #[cfg(freebsd)]
+    server.set_opt(libc::SOL_SOCKET, libc::SO_REUSEADDR, 1);
+    server.set_opt(libc::SOL_SOCKET, libc::SO_REUSEPORT, 1);
+
     assert!(server.bind(&addr).is_ok());
     let server_addr = server.name().unwrap();
     assert_eq!(addr, server_addr);
 
     let client = Socket::new(family, ty, proto).unwrap();
+
+    #[cfg(freebsd)]
+    client.set_opt(libc::SOL_SOCKET, libc::SO_REUSEADDR, 1);
+    client.set_opt(libc::SOL_SOCKET, libc::SO_REUSEPORT, 1);
+
     assert!(client.bind(&net::SocketAddr::from_str("127.0.0.1:5666").unwrap()).is_ok());
     let client_addr = client.name().unwrap();
 
@@ -113,12 +123,22 @@ fn socket_test_tcp() {
     let client_addr = net::SocketAddr::from_str("127.0.0.1:65003").unwrap();
 
     let server = Socket::new(family, ty, proto).unwrap();
+
+    #[cfg(freebsd)]
+    server.set_opt(libc::SOL_SOCKET, libc::SO_REUSEADDR, 1);
+    server.set_opt(libc::SOL_SOCKET, libc::SO_REUSEPORT, 1);
+
     assert!(server.bind(&server_addr).is_ok());
     let addr = server.name().unwrap();
     assert_eq!(addr, server_addr);
     assert!(server.listen(1).is_ok());
 
     let client = Socket::new(family, ty, proto).unwrap();
+
+    #[cfg(freebsd)]
+    client.set_opt(libc::SOL_SOCKET, libc::SO_REUSEADDR, 1);
+    client.set_opt(libc::SOL_SOCKET, libc::SO_REUSEPORT, 1);
+
     assert!(client.bind(&client_addr).is_ok());
     let addr = client.name().unwrap();
     assert_eq!(addr, client_addr);
@@ -156,12 +176,22 @@ fn socket_test_tcp6() {
     let client_addr = net::SocketAddr::from_str("[::1]:65003").unwrap();
 
     let server = Socket::new(family, ty, proto).unwrap();
+
+    #[cfg(freebsd)]
+    server.set_opt(libc::SOL_SOCKET, libc::SO_REUSEADDR, 1);
+    server.set_opt(libc::SOL_SOCKET, libc::SO_REUSEPORT, 1);
+
     assert!(server.bind(&server_addr).is_ok());
     let addr = server.name().unwrap();
     assert_eq!(addr, server_addr);
     assert!(server.listen(1).is_ok());
 
     let client = Socket::new(family, ty, proto).unwrap();
+
+    #[cfg(freebsd)]
+    client.set_opt(libc::SOL_SOCKET, libc::SO_REUSEADDR, 1);
+    client.set_opt(libc::SOL_SOCKET, libc::SO_REUSEPORT, 1);
+
     assert!(client.bind(&client_addr).is_ok());
     let addr = client.name().unwrap();
     assert_eq!(addr, client_addr);
@@ -177,7 +207,7 @@ fn socket_test_tcp6() {
         let result = result_socket.get_inheritable();
         assert!(result.is_ok() && result.unwrap() == false);
 
-		// Check whether the `NON_BLOCKING` flag worked
+        // Check whether the `NON_BLOCKING` flag worked
         let mut buf = [0; 10];
         let result = result_socket.recv(&mut buf, 0);
         assert!(result.is_err() && result.unwrap_err().kind() == std::io::ErrorKind::WouldBlock);
@@ -194,7 +224,7 @@ fn socket_test_tcp6() {
 
     let result = client.connect(&server_addr);
     assert!(result.is_ok());
-    
+
     thread::sleep(time::Duration::from_millis(50));
     assert!(client.send(&data, 0).is_ok());
 
@@ -215,6 +245,7 @@ fn socket_test_options() {
 
     let socket = Socket::new(Family::IPv4, Type::STREAM, Protocol::TCP).unwrap();
 
+    //On unix even bool options are of int type.
     let result = socket.get_opt::<c_int>(level, name);
     assert!(result.is_ok());
     assert_eq!(result.unwrap(), 0);
@@ -225,13 +256,7 @@ fn socket_test_options() {
     let result = socket.get_opt::<c_int>(level, name);
     assert!(result.is_ok());
 
-    //TODO: For some reason OSX returns here 4
-    //      Need to find out what is wrong
-    //      For now as long as it non zero it is true.
-    #[cfg(target_os = "macos")]
-    assert!(result.unwrap() > 0);
-    #[cfg(not(target_os = "macos"))]
-    assert_eq!(result.unwrap(), value_true);
+    assert!(result.unwrap() != 0);
 
     assert!(socket.set_blocking(false).is_ok());
     assert!(socket.set_inheritable(false).is_ok());
@@ -295,6 +320,10 @@ fn socket_select_timeout() {
 
     let client = Socket::new(Family::IPv4, Type::STREAM, Protocol::TCP).unwrap();
 
+    #[cfg(freebsd)]
+    client.set_opt(libc::SOL_SOCKET, libc::SO_REUSEADDR, 1);
+    client.set_opt(libc::SOL_SOCKET, libc::SO_REUSEPORT, 1);
+
     assert!(client.set_blocking(false).is_ok());
     let result = client.connect(&server_addr);
     assert!(result.is_err()); //Non-blocking connect returns error
@@ -323,10 +352,19 @@ fn socket_select_connect() {
     let server_addr = net::SocketAddr::from_str("127.0.0.1:60006").unwrap();
 
     let server = Socket::new(family, ty, proto).unwrap();
+
+    #[cfg(freebsd)]
+    server.set_opt(libc::SOL_SOCKET, libc::SO_REUSEADDR, 1);
+    server.set_opt(libc::SOL_SOCKET, libc::SO_REUSEPORT, 1);
+
     assert!(server.bind(&server_addr).is_ok());
     server.listen(0).unwrap();
 
     let client = Socket::new(family, ty, proto).unwrap();
+
+    #[cfg(freebsd)]
+    client.set_opt(libc::SOL_SOCKET, libc::SO_REUSEADDR, 1);
+    client.set_opt(libc::SOL_SOCKET, libc::SO_REUSEPORT, 1);
 
     let th = thread::spawn(move || {
         let result = server.accept();
