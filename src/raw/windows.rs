@@ -16,15 +16,15 @@ mod winapi {
 
     pub type SOCKET = ::std::os::windows::io::RawSocket;
 
-	pub use self::winapi::{
-		ADDRESS_FAMILY,
-		HANDLE,
-		DWORD,
-		WORD,
-		GROUP,
-		CHAR,
-		USHORT
-	};
+    pub use self::winapi::{
+        ADDRESS_FAMILY,
+        HANDLE,
+        DWORD,
+        WORD,
+        GROUP,
+        CHAR,
+        USHORT
+    };
 
     pub use self::winapi::{
         INVALID_SOCKET,
@@ -103,8 +103,8 @@ mod winapi {
     pub const HANDLE_FLAG_INHERIT: winapi::DWORD = 1;
 
     pub use self::kernel32::{
-    	SetHandleInformation,
-    	GetHandleInformation
+        SetHandleInformation,
+        GetHandleInformation
     };
 }
 
@@ -182,6 +182,7 @@ pub enum ShutdownType {
 impl_into_trait!(ShutdownType);
 
 ///Raw socket
+#[derive(Clone)]
 pub struct Socket {
     inner: winapi::SOCKET
 }
@@ -480,16 +481,16 @@ impl Socket {
         }
     }
 
-	///Returns whether this socket will be inherited by child processes or not.
-	pub fn get_inheritable(&self) -> io::Result<bool> {
-		unsafe {
-			let mut flags: winapi::DWORD = 0;
-			match winapi::GetHandleInformation(self.inner as winapi::HANDLE, &mut flags as *mut _) {
+    ///Returns whether this socket will be inherited by child processes or not.
+    pub fn get_inheritable(&self) -> io::Result<bool> {
+        unsafe {
+            let mut flags: winapi::DWORD = 0;
+            match winapi::GetHandleInformation(self.inner as winapi::HANDLE, &mut flags as *mut _) {
                 0 => Err(io::Error::last_os_error()),
                 _ => Ok((flags & winapi::HANDLE_FLAG_INHERIT) != 0)
             }
         }
-	}
+    }
 
     ///Stops receive and/or send over socket.
     pub fn shutdown(&self, direction: ShutdownType) -> io::Result<()> {

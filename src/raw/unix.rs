@@ -191,6 +191,7 @@ pub enum ShutdownType {
 impl_into_trait!(ShutdownType);
 
 ///Raw socket
+#[derive(Clone)]
 pub struct Socket {
     inner: SOCKET
 }
